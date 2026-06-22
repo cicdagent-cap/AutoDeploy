@@ -1,11 +1,32 @@
 default_platform(:ios)
 
+def resolved_project_file(default_project)
+  env_project = ENV["CICD_PROJECT_FILE"]
+  return env_project if env_project && !env_project.empty? && File.exist?(env_project)
+  return default_project if File.exist?(default_project)
+
+  detected = Dir.glob("*.xcodeproj").first
+  return detected unless detected.nil? || detected.empty?
+
+  default_project
+end
+
+def resolved_scheme(default_scheme)
+  env_scheme = ENV["CICD_DEFAULT_SCHEME"]
+  return env_scheme if env_scheme && !env_scheme.empty?
+
+  project = resolved_project_file("#{default_scheme}.xcodeproj")
+  return File.basename(project, ".xcodeproj") if project.end_with?(".xcodeproj")
+
+  default_scheme
+end
+
 platform :ios do
 
   desc "Build app (CI)"
   lane :build do
-    project = ENV["CICD_PROJECT_FILE"] || "CI_CD_Project.xcodeproj"
-    scheme  = ENV["CICD_DEFAULT_SCHEME"] || "CI_CD_Project"
+    project = resolved_project_file("CI_CD_Project.xcodeproj")
+    scheme  = resolved_scheme("CI_CD_Project")
     config  = ENV["CICD_DEFAULT_CONFIGURATION"] || "Debug"
 
     build_app(
@@ -19,8 +40,8 @@ platform :ios do
 
   desc "Run unit tests"
   lane :test do
-    project = ENV["CICD_PROJECT_FILE"] || "CI_CD_Project.xcodeproj"
-    scheme  = ENV["CICD_DEFAULT_SCHEME"] || "CI_CD_Project"
+    project = resolved_project_file("CI_CD_Project.xcodeproj")
+    scheme  = resolved_scheme("CI_CD_Project")
     dest    = ENV["CICD_TEST_DESTINATION"] || "platform=iOS Simulator,name=iPhone 15"
 
     run_tests(
@@ -53,8 +74,8 @@ platform :ios do
 
   desc "Build (ad-hoc) and distribute to Firebase App Distribution"
   lane :firebase_distribute do
-    project = ENV["CICD_PROJECT_FILE"] || "cicd.xcodeproj"
-    scheme  = ENV["CICD_DEFAULT_SCHEME"] || "cicd"
+    project = resolved_project_file("cicd.xcodeproj")
+    scheme  = resolved_scheme("cicd")
     config  = ENV["CICD_DEFAULT_CONFIGURATION"] || "Debug"
     app_id  = ENV["FIREBASE_APP_ID"]
     groups  = ENV["FIREBASE_GROUPS"] || "testers"
