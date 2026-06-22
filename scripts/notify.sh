@@ -68,9 +68,15 @@ else
   PAYLOAD=$(printf '{"text":"%s"}' "${MESSAGE}")
 fi
 
-curl --fail --silent --show-error \
+HTTP_CODE=$(curl --write-out '%{http_code}' --silent --output /tmp/notify_response.txt \
   -H "Content-Type: application/json" \
   -d "${PAYLOAD}" \
-  "${TEAM_WEBHOOK_URL}"
+  "${TEAM_WEBHOOK_URL}")
 
-echo "Team notification sent: $READABLE_STATUS"
+if [ "${HTTP_CODE}" -eq 200 ]; then
+  echo "Team notification sent: $READABLE_STATUS"
+else
+  echo "[WARNING] Notification failed with HTTP ${HTTP_CODE}"
+  cat /tmp/notify_response.txt
+  exit 1
+fi
