@@ -38,14 +38,15 @@ end
 
 platform :ios do
 
-  desc "Build app (CI) — no IPA packaging"
+  desc "Build app (CI) — no IPA packaging, no code signing"
   lane :build do
     build_app(
-      project:       resolved_project_file,
-      scheme:        resolved_scheme,
-      configuration: resolved_config(default: "Debug"),
-      clean:         true,
-      skip_package_ipa: true
+      project:          resolved_project_file,
+      scheme:           resolved_scheme,
+      configuration:    resolved_config(default: "Debug"),
+      clean:            true,
+      skip_package_ipa: true,
+      skip_codesigning: true
     )
   end
 
