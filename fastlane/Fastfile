@@ -13,7 +13,10 @@ def resolved_project_file
   env_val = ENV["CICD_PROJECT_FILE"]
   return env_val if env_val && !env_val.strip.empty? && File.exist?(env_val)
 
-  detected = Dir.glob("*.xcodeproj").first
+  # Fastlane CWD is fastlane/ — search repo root (parent) first, then CWD
+  root = File.expand_path("..", __dir__)
+  detected = Dir.glob(File.join(root, "*.xcodeproj")).first ||
+             Dir.glob("*.xcodeproj").first
   UI.user_error!("No .xcodeproj found. Set CICD_PROJECT_FILE.") if detected.nil? || detected.empty?
 
   detected
